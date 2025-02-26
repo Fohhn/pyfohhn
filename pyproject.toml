@@ -10,6 +10,7 @@ repository = "https://github.com/prozessorkern/pyfohhn"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+pyserial = "^3.5"
 
 
 [build-system]

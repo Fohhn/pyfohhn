@@ -3,6 +3,7 @@ Communication module to interact with Fohhn devices usind UDP or serial.
 """
 
 import socket
+import serial
 
 
 class PyfohhnFdcp:
@@ -14,6 +15,9 @@ class PyfohhnFdcp:
 
     @classmethod
     def _escape_data(cls, data):
+        """
+        Escape binary data to be sent to a device (escape start and control byte)
+        """
         escaped_data = bytearray()
 
         for byte in data:
@@ -30,6 +34,9 @@ class PyfohhnFdcp:
 
     @classmethod
     def _unescape_data(cls, data):
+        """
+        Unescape data received from a device
+        """
         unescaped_data = bytearray()
         escape_sequence_detected = False
 
@@ -50,19 +57,10 @@ class PyfohhnFdcp:
 
         return unescaped_data
 
-
-class PyfohhnFdcpUdp(PyfohhnFdcp):
-
-    def __init__(self, ip_address, port=2101):
-        super().__init__()
-        self.ip_address = ip_address
-        self.port = port
-
-    def send_command(self, id, command, msb, lsb, data):
+    def _prepare_command(self, id, command, msb, lsb, data):
         """
-        Escape and send a binary FDCP command and wait for the response.
+        Assemble and escape a command
         """
-
         # calc actual payload length - 0 means 256 bytes
         if len(data) > 0 and len(data) < 256:
             length = len(data)
@@ -75,14 +73,65 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
         escaped_command += self._escape_data(bytearray([id, length, command, msb, lsb]))
         escaped_command += self._escape_data(data)
 
-        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        sock.settimeout(1)
+        return escaped_command
 
-        # send command to device
-        sock.sendto(escaped_command, (self.ip_address, self.port))
+    def _send_command(self, escaped_command):
+        """
+        Abstract method to actually send data to the device
+        """
+        raise NotImplementedError()
 
-        response = sock.recv(600)
+    def send_command(self, id, command, msb, lsb, data):
+        """
+        Escape and send a binary FDCP command and wait for the response.
+        """
+        escaped_command = self._prepare_command(id, command, msb, lsb, data)
 
-        if response:
-            return self._unescape_data(response[:-2])
+        # up to 3 retries
+        for i in range(3):
+            response = self._send_command(escaped_command)
+            if response:
+                return self._unescape_data(response[:-2])
+
         return None
+
+
+class PyfohhnFdcpUdp(PyfohhnFdcp):
+
+    def __init__(self, ip_address, port=2101):
+        super().__init__()
+        self.ip_address = ip_address
+        self.port = port
+
+    def _send_command(self, escaped_command):
+        """
+        Send a pre-escaped command via UDP
+        """
+        with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
+            sock.settimeout(1)
+
+            # send command to device
+            sock.sendto(escaped_command, (self.ip_address, self.port))
+
+            response = sock.recv(600)
+
+        return response
+
+
+class PyfohhnFdcpSerial(PyfohhnFdcp):
+
+    def __init__(self, com_port=None, baud_rate=None):
+        super().__init__()
+        self.com_port = com_port
+        self.baud_rate = baud_rate
+
+    def _send_command(self, escaped_command):
+        """
+        Send a pre-escaped command via serial
+        """
+        with serial.Serial(self.com_port, self.baud_rate, timeout=1) as ser:
+            ser.write(escaped_command)
+
+            response = ser.read(600)
+
+        return response

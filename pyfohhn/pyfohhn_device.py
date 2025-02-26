@@ -5,7 +5,7 @@ all accessible data from a Fohhn device.
 """
 
 from struct import unpack, pack
-from .pyfohhn_fdcp import PyfohhnFdcpUdp
+from .pyfohhn_fdcp import PyfohhnFdcpUdp, PyfohhnFdcpSerial
 
 
 class PyFohhnCommands:
@@ -45,7 +45,7 @@ class PyFohhnDevice:
         if ip_address and port:
             self.communicator = PyfohhnFdcpUdp(ip_address, port)
         elif com_port and baud_rate:
-            self.communicator = None
+            self.communicator = PyfohhnFdcpSerial(com_port, baud_rate)
         else:
             raise ValueError(
                 "either ip_address and port or com_port and baud_rate required"
