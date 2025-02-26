@@ -31,7 +31,7 @@ class PyFohhnDevice:
         """
         Request device class and version
         """
-        response = self.communicator.send_command(self.id, 0x20, 0x00, 0x00, b"x01")
+        response = self.communicator.send_command(self.id, 0x20, 0x00, 0x00, b"\x01")
         return unpack(">HBBB", response)
 
     def set_volume(self, channel, vol, on, invert):
@@ -45,17 +45,17 @@ class PyFohhnDevice:
             flags += 2
 
         response = self.communicator.send_command(
-            self.id, 0x87, channel, 1, pack(">HB", int(vol * 10), flags)
+            self.id, 0x87, channel, 1, pack(">hB", int(vol * 10), flags)
         )
 
-    def get_volume(self, channel, vol, on, invert):
+    def get_volume(self, channel):
         """
         Get a channels volume
         """
         response = self.communicator.send_command(
             self.id, 0x0A, channel, 1, pack(">B", 0x87)
         )
-        vol_int, flags = unpack(">HB", response)
+        vol_int, flags = unpack(">hB", response)
         vol = float(vol_int) / 10
         on = bool(flags & 0x01)
         invert = bool(flags & 0x02)

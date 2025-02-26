@@ -41,6 +41,7 @@ class PyfohhnFdcp:
                     unescaped_data.append(cls.CONTROL_BYTE)
                 else:
                     return None
+                escape_sequence_detected = False
             else:
                 if byte == cls.CONTROL_BYTE:
                     escape_sequence_detected = True
@@ -70,12 +71,11 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
         else:
             raise ValueError("payload length must be in range from 1 to 256")
 
-        escaped_command = bytearray(self.START_BYTE)
+        escaped_command = bytearray([self.START_BYTE])
         escaped_command += self._escape_data(bytearray([id, length, command, msb, lsb]))
         escaped_command += self._escape_data(data)
 
         sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        sock.bind((socket.INADDR_ANY, self.port))
         sock.settimeout(1)
 
         # send command to device
