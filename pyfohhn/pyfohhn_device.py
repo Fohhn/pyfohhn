@@ -33,6 +33,9 @@ class PyFohhnCommands:
 
 
 class PyFohhnDevice:
+    """
+    Device communication class to be used to exchange data with a device using FDCP protocol.
+    """
 
     def __init__(
         self, id=None, ip_address=None, port=2101, com_port=None, baud_rate=None
@@ -482,7 +485,7 @@ class PyFohhnDevice:
         on = bool(flags & 0x01)
 
         return lim, comp, ratio, on
-    
+
     def set_dynamics_time(self, channel, attack, release):
         """
         Sets the dynamics time constants[s] to a channel
