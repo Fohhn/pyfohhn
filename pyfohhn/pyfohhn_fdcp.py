@@ -64,7 +64,7 @@ class PyfohhnFdcp:
         # calc actual payload length - 0 means 256 bytes
         if len(data) > 0 and len(data) < 256:
             length = len(data)
-        elif length == 256:
+        elif len(data) == 256:
             length = 0
         else:
             raise ValueError("payload length must be in range from 1 to 256")
@@ -129,9 +129,18 @@ class PyfohhnFdcpSerial(PyfohhnFdcp):
         """
         Send a pre-escaped command via serial
         """
-        with serial.Serial(self.com_port, self.baud_rate, timeout=1) as ser:
+        response = bytearray()
+
+        with serial.Serial(self.com_port, self.baud_rate, timeout=0.1) as ser:
             ser.write(escaped_command)
 
-            response = ser.read(600)
+            while True:
+                data = ser.read(1)
+
+                if data:
+                    response.append(data[0])
+
+                    if response[-1] == self.START_BYTE:
+                        break
 
         return response

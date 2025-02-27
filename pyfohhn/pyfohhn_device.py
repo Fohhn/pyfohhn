@@ -83,9 +83,8 @@ class PyFohhnDevice:
         Get the number and name of a loaded speaker preset by channel
         """
         response = self.communicator.send_command(
-            self.id, PyFohhnCommands.GET_SPEAKER, channel, 0x00, b"\x00"
+            self.id, PyFohhnCommands.GET_SPEAKER, channel, 0x02, b"\x00"
         )
-        # todo - is it correct to receive the first 20 bytes?
         return response[20], response[22:38].decode("ASCII")
 
     def set_volume(self, channel, vol, on, invert):
