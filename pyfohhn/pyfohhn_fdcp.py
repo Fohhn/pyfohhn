@@ -121,7 +121,25 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
                 response = None
 
         return response
+    
+    def send_text_command(self, command, retries=2):
+        """
+        Send a text command to a device and return the response
+        """
 
+        for i in range(retries + 1):
+            with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
+                sock.settimeout(0.1)
+
+                # send command to device
+                sock.sendto(command.encode("ASCII"), (self.ip_address, self.port))
+
+                try:
+                    response = sock.recv(600)
+                    return response.decode("ASCII")
+                except TimeoutError:
+                    response = None
+        return response
 
 class PyfohhnFdcpSerial(PyfohhnFdcp):
     """
