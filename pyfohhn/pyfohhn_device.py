@@ -37,6 +37,8 @@ class PyFohhnDevice:
     Device communication class to be used to exchange data with a device using FDCP protocol.
     """
 
+    MAX_ID = 254
+
     def __init__(
         self, id=None, ip_address=None, port=2101, com_port=None, baud_rate=None
     ):
@@ -51,7 +53,17 @@ class PyFohhnDevice:
                 "either ip_address and port or com_port and baud_rate required"
             )
 
-        # todo scan for id if None
+        # scan for devices - use first found device ID
+        if self.id is None:
+            for i in range(1, self.MAX_ID):
+                response = self.communicator.send_command(
+                    i, PyFohhnCommands.GET_INFO, 0x00, 0x00, b"\x01", retries=0
+                )
+                if response:
+                    self.id = i
+                    break
+            else:
+                ValueError("No device found - please check connection")
 
     def load_preset(self, preset_nr):
         """
