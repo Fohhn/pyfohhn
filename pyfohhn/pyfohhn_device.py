@@ -30,6 +30,8 @@ class PyFohhnCommands:
     SET_XOVER = 0x82
     SET_DELAY = 0x86
     SET_SPEAKER = 0x21
+    SYSTEM_RESET = 0x19
+    GET_SIGNALS = 0x8D
 
 
 class PyFohhnDevice:
@@ -88,7 +90,7 @@ class PyFohhnDevice:
         response = self.communicator.send_command(
             self.id, PyFohhnCommands.GET_PRESET_NAME, 0x01, 0x00, b"\x00"
         )
-        return response.decode("ASCII")
+        return response[0], response[2:18].decode("ASCII")
 
     def get_speaker(self, channel):
         """
@@ -235,6 +237,18 @@ class PyFohhnDevice:
         )
         return bool(response[0])
 
+    def reset(self):
+        """
+        Reset a Fohhn device
+        """
+        _response = self.communicator.send_command(
+            self.id,
+            PyFohhnCommands.SYSTEM_RESET,
+            0,
+            0,
+            b"\x07\x53\x4a\x80"
+        )
+
     def get_info(self):
         """
         Request device class and version
@@ -252,6 +266,21 @@ class PyFohhnDevice:
             self.id, PyFohhnCommands.GET_CONTROLS, 0x00, 0x00, b"\x01"
         )
         return response[0]
+
+    def get_signals(self):
+        """
+        Reads the signal levels (outputs before inputs)
+        """
+        signal_list = []
+
+        response = self.communicator.send_command(
+            self.id, PyFohhnCommands.GET_SIGNALS, 0x01, 0x01, b"\x00"
+        )
+        for byte in response:
+            signal = unpack(">b", bytearray([byte]))[0]
+            signal_list.append(float(signal))
+
+        return signal_list
 
     def get_temperature(self):
         """
