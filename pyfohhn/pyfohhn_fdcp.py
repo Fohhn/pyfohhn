@@ -81,14 +81,13 @@ class PyfohhnFdcp:
         """
         raise NotImplementedError()
 
-    def send_command(self, id, command, msb, lsb, data):
+    def send_command(self, id, command, msb, lsb, data, retries=2):
         """
         Escape and send a binary FDCP command and wait for the response.
         """
         escaped_command = self._prepare_command(id, command, msb, lsb, data)
 
-        # up to 3 retries
-        for i in range(3):
+        for i in range(retries + 1):
             response = self._send_command(escaped_command)
             if response:
                 return self._unescape_data(response[:-2])
@@ -97,6 +96,9 @@ class PyfohhnFdcp:
 
 
 class PyfohhnFdcpUdp(PyfohhnFdcp):
+    """
+    Communication class to communicate with Fohhn devices using UDP
+    """
 
     def __init__(self, ip_address, port=2101):
         super().__init__()
@@ -108,17 +110,23 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
         Send a pre-escaped command via UDP
         """
         with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
-            sock.settimeout(1)
+            sock.settimeout(0.1)
 
             # send command to device
             sock.sendto(escaped_command, (self.ip_address, self.port))
 
-            response = sock.recv(600)
+            try:
+                response = sock.recv(600)
+            except TimeoutError:
+                response = None
 
         return response
 
 
 class PyfohhnFdcpSerial(PyfohhnFdcp):
+    """
+    Communication class to communicate with Fohhn devices using a serial port
+    """
 
     def __init__(self, com_port=None, baud_rate=None):
         super().__init__()
@@ -142,5 +150,7 @@ class PyfohhnFdcpSerial(PyfohhnFdcp):
 
                     if response[-1] == self.START_BYTE:
                         break
+                else:
+                    return None
 
         return response
