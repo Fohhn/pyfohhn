@@ -97,7 +97,7 @@ class PyFohhnDevice:
         Get the number and name of a loaded speaker preset by channel
         """
         response = self.communicator.send_command(
-            self.id, PyFohhnCommands.GET_SPEAKER, channel, 0x02, b"\x00"
+            self.id, PyFohhnCommands.GET_SPEAKER, channel, 0x00, b"\x02"
         )
         return response[20], response[22:38].decode("ASCII")
 
