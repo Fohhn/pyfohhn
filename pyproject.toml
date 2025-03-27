@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "pyfohhn"
-version = "1.1.0"
+version = "1.1.1"
 description = "Python library to interact with Fohhn Speakers"
-authors = ["Stefan Strobel <stefan.strobel@shimatta.net>"]
+authors = ["Stefan Strobel <stefan.strobel@fohhn.com>"]
 license = "MIT"
 readme = "README.md"
-homepage = "https://github.com/prozessorkern/pyfohhn"
-repository = "https://github.com/prozessorkern/pyfohhn"
+homepage = "https://github.com/fohhn/pyfohhn"
+repository = "https://github.com/fohhn/pyfohhn"
 
 [tool.poetry.dependencies]
 python = "^3.10"
