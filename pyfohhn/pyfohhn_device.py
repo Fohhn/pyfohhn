@@ -32,6 +32,8 @@ class PyFohhnCommands:
     SET_SPEAKER = 0x21
     SYSTEM_RESET = 0x19
     GET_SIGNALS = 0x8D
+    SET_FOCUS_GAIN = 0x9D
+    SET_FOCUS_DELAY = 0xA7
 
 
 class PyFohhnDevice:
@@ -576,6 +578,54 @@ class PyFohhnDevice:
             pack(">B", PyFohhnCommands.SET_DYNAMIC_GAIN),
         )
         vol_int, _flags = unpack(">hB", response)
+        vol = float(vol_int) / 10
+
+        return vol
+
+    def set_focus_delay(self, channel, index, delay):
+        """Sets the focus delay [s]"""
+        _response = self.communicator.send_command(
+            self.id,
+            PyFohhnCommands.SET_FOCUS_DELAY,
+            channel,
+            index,
+            pack(">h", int(delay * 1000000), 1),
+        )
+
+    def get_focus_delay(self, channel, index):
+        """Gets the focus delay [s]"""
+        response = self.communicator.send_command(
+            self.id,
+            PyFohhnCommands.READBACK,
+            channel,
+            index,
+            pack(">B", PyFohhnCommands.SET_FOCUS_DELAY),
+        )
+        delay_int = unpack(">h", response)
+        delay = float(delay_int) / 1000000
+
+        return delay
+
+    def set_focus_gain(self, channel, index, vol):
+        """Sets the gain of focus speakers"""
+        _response = self.communicator.send_command(
+            self.id,
+            PyFohhnCommands.SET_FOCUS_GAIN,
+            channel,
+            index,
+            pack(">h", int(vol * 10)),
+        )
+
+    def get_focus_gain(self, channel, index):
+        """Gets the gain of focus speakers"""
+        response = self.communicator.send_command(
+            self.id,
+            PyFohhnCommands.READBACK,
+            channel,
+            index,
+            pack(">B", PyFohhnCommands.SET_FOCUS_GAIN),
+        )
+        vol_int = unpack(">h", response)
         vol = float(vol_int) / 10
 
         return vol
