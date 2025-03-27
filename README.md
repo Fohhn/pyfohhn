@@ -1,4 +1,5 @@
 # pyfohhn
+
 Python library to interact with Fohhn Speakers
 
 
@@ -38,3 +39,7 @@ print(dev.get_volume(1))
 ```
 
 The functions are quite self explaining - just check the docstrings.
+
+## License
+
+pyfohhn is licensed under the [MIT License](https://opensource.org/licenses/MIT), see [LICENSE](LICENSE) for more information.
