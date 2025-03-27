@@ -65,7 +65,7 @@ class PyFohhnDevice:
                     self.id = i
                     break
             else:
-                ValueError("No device found - please check connection")
+                raise ValueError("No device found - please check connection")
 
     def load_preset(self, preset_nr):
         """
@@ -242,11 +242,7 @@ class PyFohhnDevice:
         Reset a Fohhn device
         """
         _response = self.communicator.send_command(
-            self.id,
-            PyFohhnCommands.SYSTEM_RESET,
-            0,
-            0,
-            b"\x07\x53\x4a\x80"
+            self.id, PyFohhnCommands.SYSTEM_RESET, 0, 0, b"\x07\x53\x4a\x80"
         )
 
     def get_info(self):
