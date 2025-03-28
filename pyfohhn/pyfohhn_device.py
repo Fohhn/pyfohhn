@@ -18,6 +18,7 @@ class PyFohhnCommands:
     SET_STANDBY = 0x0C
     SET_ROUTE = 0x81
     GET_INFO = 0x20
+    GET_OPERATING_TIME = 0x0B
     GET_CONTROLS = 0x07
     GET_SPEAKER = 0x22
     SET_LIGHT = 0x0D
@@ -68,6 +69,15 @@ class PyFohhnDevice:
                     break
             else:
                 raise ValueError("No device found - please check connection")
+
+    def probe(self):
+        """
+        Check if the device is accessible - returns True if device is accessible
+        """
+        response = self.communicator.send_command(
+            self.id, PyFohhnCommands.GET_INFO, 0x00, 0x00, b"\x01", retries=0
+        )
+        return bool(response)
 
     def load_preset(self, preset_nr):
         """
@@ -255,6 +265,17 @@ class PyFohhnDevice:
             self.id, PyFohhnCommands.GET_INFO, 0x00, 0x00, b"\x01"
         )
         return unpack(">HBBB", response)
+
+    def get_operating_time(self):
+        """
+        Request devices operating time in min
+        """
+        response = self.communicator.send_command(
+            self.id, PyFohhnCommands.GET_OPERATING_TIME, 0x01, 0x00, b"\x00"
+        )
+        hours_1, hours_2, hours_3, minutes = unpack(">BBBB", response)
+        hours = (hours_1 << 16) + (hours_2 << 8) + hours_3
+        return int(hours * 60 + minutes)
 
     def get_controls(self):
         """
