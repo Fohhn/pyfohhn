@@ -31,6 +31,7 @@ class PyFohhnCommands:
     SET_XOVER = 0x82
     SET_DELAY = 0x86
     SET_SPEAKER = 0x21
+    SET_AUTO_POWER_SAVE = 0xAA
     SYSTEM_RESET = 0x19
     GET_SIGNALS = 0x8D
     SET_FOCUS_GAIN = 0x9D
@@ -95,6 +96,21 @@ class PyFohhnDevice:
             self.id, PyFohhnCommands.SET_SPEAKER, channel, speaker_nr, b"\x00"
         )
 
+    def set_auto_power_save(self, time_s, on):
+        """
+        Control the auto power save function
+        """
+        flags = 0x00
+        if on:
+            flags |= 0x01
+        data = bytearray(
+            [time_s >> 16 & 0xFF, time_s >> 8 & 0xFF, time_s & 0xFF, flags]
+        )
+
+        _response = self.communicator.send_command(
+            self.id, PyFohhnCommands.SET_AUTO_POWER_SAVE, 0x00, 0x00, data
+        )
+
     def get_preset(self):
         """
         Get the loaded preset name
@@ -112,6 +128,22 @@ class PyFohhnDevice:
             self.id, PyFohhnCommands.GET_SPEAKER, channel, 0x00, b"\x02"
         )
         return response[20], response[22:38].decode("ASCII")
+
+    def get_auto_power_save(self):
+        """
+        Read the current auto powersave configuration.
+        """
+        response = self.communicator.send_command(
+            self.id,
+            PyFohhnCommands.READBACK,
+            0x00,
+            0x00,
+            pack(">B", PyFohhnCommands.SET_AUTO_POWER_SAVE),
+        )
+        time_s = (response[0] << 16) + (response[1] << 8) + response[2]
+        on = bool(response[3] & 0x01)
+
+        return time_s, on
 
     def set_volume(self, channel, vol, on, invert):
         """
