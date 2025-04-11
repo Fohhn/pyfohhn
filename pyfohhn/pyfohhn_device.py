@@ -5,6 +5,7 @@ all accessible data from a Fohhn device.
 """
 
 from struct import unpack, pack
+import ipaddress
 from .pyfohhn_fdcp import PyfohhnFdcpUdp, PyfohhnFdcpSerial
 
 
@@ -35,6 +36,7 @@ class PyFohhnCommands:
     SYSTEM_RESET = 0x19
     GET_SIGNALS = 0x8D
     SET_FOCUS_GAIN = 0x9D
+    GETSET_IP = 0xA6
     SET_FOCUS_DELAY = 0xA7
 
 
@@ -682,3 +684,33 @@ class PyFohhnDevice:
         vol = float(vol_int) / 10
 
         return vol
+
+    def get_mac_address(self):
+        """Requests the 6 byte MAC ID from devices supporting it and returns the MAC ID as string"""
+        response = self.communicator.send_command(
+            self.id,
+            PyFohhnCommands.GETSET_IP,
+            0x01,
+            0x00,
+            pack(">B", 0x00),
+        )
+
+        return ":".join(f"{x:02X}" for x in unpack(">BBBBBB", response))
+
+    def get_ip_address(self):
+        """Requests ip settings from devices supporting it - returns ip, netmask, gateway and DHCP enabled"""
+        response = self.communicator.send_command(
+            self.id,
+            PyFohhnCommands.GETSET_IP,
+            0x01,
+            0x01,
+            pack(">B", 0x00),
+        )
+        ip_address, netmask, gateway, flags = unpack(">LLLxxxB", response)
+
+        return (
+            str(ipaddress.ip_address(ip_address)),
+            str(ipaddress.ip_address(netmask)),
+            str(ipaddress.ip_address(gateway)),
+            bool(flags & 0x01),
+        )
