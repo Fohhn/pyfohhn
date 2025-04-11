@@ -4,6 +4,7 @@ Communication module to interact with Fohhn devices usind UDP or serial.
 
 import socket
 import serial
+import time
 
 
 class PyfohhnFdcp:
@@ -92,6 +93,9 @@ class PyfohhnFdcp:
             if response:
                 return self._unescape_data(response[:-2])
 
+            # give the device time to recover
+            time.sleep(0.5)
+
         return None
 
 
@@ -110,6 +114,15 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
         """
         Send a pre-escaped command via UDP
         """
+
+        # clear all stuck data from the socket
+        self.sock.settimeout(0)
+        try:
+            while True:
+                data = self.sock.recv(600)
+        except:
+            pass
+
         # send command to device
         self.sock.settimeout(timeout)
         self.sock.sendto(escaped_command, (self.ip_address, self.port))
@@ -127,17 +140,29 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
         """
 
         for i in range(retries + 1):
-            with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
-                sock.settimeout(timeout)
 
-                # send command to device
-                sock.sendto(command.encode("ASCII"), (self.ip_address, self.port))
+            # clear all stuck data from the socket
+            self.sock.settimeout(0)
+            try:
+                while True:
+                    data = self.sock.recv(600)
+            except:
+                pass
 
-                try:
-                    response = sock.recv(600)
-                    return response.decode("ASCII")
-                except TimeoutError:
-                    response = None
+            self.sock.settimeout(timeout)
+
+            # send command to device
+            self.sock.sendto(command.encode("ASCII"), (self.ip_address, self.port))
+
+            try:
+                response = self.sock.recv(600)
+                return response.decode("ASCII")
+            except TimeoutError:
+                response = None
+
+            # give the device time to recover
+            time.sleep(0.5)
+
         return response
 
 
