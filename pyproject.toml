@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyfohhn"
-version = "1.2.0"
+version = "1.2.1"
 description = "Python library to interact with Fohhn Speakers"
 authors = ["Stefan Strobel <stefan.strobel@fohhn.com>"]
 license = "MIT"
