@@ -75,20 +75,20 @@ class PyfohhnFdcp:
 
         return escaped_command
 
-    def _send_command(self, escaped_command):
+    def _send_command(self, escaped_command, timeout=0.1):
         """
         Abstract method to actually send data to the device
         """
         raise NotImplementedError()
 
-    def send_command(self, id, command, msb, lsb, data, retries=2):
+    def send_command(self, id, command, msb, lsb, data, retries=2, timeout=0.1):
         """
         Escape and send a binary FDCP command and wait for the response.
         """
         escaped_command = self._prepare_command(id, command, msb, lsb, data)
 
         for i in range(retries + 1):
-            response = self._send_command(escaped_command)
+            response = self._send_command(escaped_command, timeout)
             if response:
                 return self._unescape_data(response[:-2])
 
@@ -105,13 +105,13 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
         self.ip_address = ip_address
         self.port = port
         self.sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        self.sock.settimeout(0.1)
 
-    def _send_command(self, escaped_command):
+    def _send_command(self, escaped_command, timeout=0.1):
         """
         Send a pre-escaped command via UDP
         """
         # send command to device
+        self.sock.settimeout(timeout)
         self.sock.sendto(escaped_command, (self.ip_address, self.port))
 
         try:
@@ -121,14 +121,14 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
 
         return response
 
-    def send_text_command(self, command, retries=2):
+    def send_text_command(self, command, retries=2, timeout=0.1):
         """
         Send a text command to a device and return the response
         """
 
         for i in range(retries + 1):
             with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
-                sock.settimeout(0.1)
+                sock.settimeout(timeout)
 
                 # send command to device
                 sock.sendto(command.encode("ASCII"), (self.ip_address, self.port))
@@ -151,13 +151,13 @@ class PyfohhnFdcpSerial(PyfohhnFdcp):
         self.com_port = com_port
         self.baud_rate = baud_rate
 
-    def _send_command(self, escaped_command):
+    def _send_command(self, escaped_command, timeout=0.1):
         """
         Send a pre-escaped command via serial
         """
         response = bytearray()
 
-        with serial.Serial(self.com_port, self.baud_rate, timeout=0.1) as ser:
+        with serial.Serial(self.com_port, self.baud_rate, timeout=timeout) as ser:
             ser.write(escaped_command)
 
             while True:
