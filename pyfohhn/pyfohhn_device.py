@@ -695,7 +695,7 @@ class PyFohhnDevice:
             pack(">B", 0x00),
         )
 
-        return ":".join(f"{x:02X}" for x in unpack(">BBBBBB", response))
+        return "-".join(f"{x:02X}" for x in unpack(">BBBBBB", response))
 
     def get_ip_address(self):
         """Requests ip settings from devices supporting it - returns ip, netmask, gateway and DHCP enabled"""
