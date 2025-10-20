@@ -5,6 +5,7 @@ Communication module to interact with Fohhn devices usind UDP or serial.
 import socket
 import serial
 import time
+from threading import Lock
 
 
 class PyfohhnFdcp:
@@ -13,6 +14,9 @@ class PyfohhnFdcp:
     CONTROL_BYTE = 0xFF
     ESCAPED_START_BYTE = 0x00
     ESCAPED_CONTROL_BYTE = 0x01
+
+    def __init__(self) -> None:
+        self._mutex = Lock()
 
     @classmethod
     def _escape_data(cls, data):
@@ -115,22 +119,23 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
         Send a pre-escaped command via UDP
         """
 
-        # clear all stuck data from the socket
-        self.sock.settimeout(0)
-        try:
-            while True:
-                data = self.sock.recv(600)
-        except:
-            pass
+        with self._mutex:
+            # clear all stuck data from the socket
+            self.sock.settimeout(0)
+            try:
+                while True:
+                    data = self.sock.recv(600)
+            except:
+                pass
 
-        # send command to device
-        self.sock.settimeout(timeout)
-        self.sock.sendto(escaped_command, (self.ip_address, self.port))
+            # send command to device
+            self.sock.settimeout(timeout)
+            self.sock.sendto(escaped_command, (self.ip_address, self.port))
 
-        try:
-            response = self.sock.recv(600)
-        except TimeoutError:
-            response = None
+            try:
+                response = self.sock.recv(600)
+            except TimeoutError:
+                response = None
 
         return response
 
@@ -141,27 +146,29 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
 
         for i in range(retries + 1):
 
-            # clear all stuck data from the socket
-            self.sock.settimeout(0)
-            try:
-                while True:
-                    data = self.sock.recv(600)
-            except:
-                pass
+            with self._mutex:
 
-            self.sock.settimeout(timeout)
+                # clear all stuck data from the socket
+                self.sock.settimeout(0)
+                try:
+                    while True:
+                        data = self.sock.recv(600)
+                except:
+                    pass
 
-            # send command to device
-            self.sock.sendto(command.encode("ASCII"), (self.ip_address, self.port))
+                self.sock.settimeout(timeout)
 
-            try:
-                response = self.sock.recv(600)
-                return response.decode("ASCII")
-            except TimeoutError:
-                response = None
+                # send command to device
+                self.sock.sendto(command.encode("ASCII"), (self.ip_address, self.port))
 
-            # give the device time to recover
-            time.sleep(0.5)
+                try:
+                    response = self.sock.recv(600)
+                    return response.decode("ASCII")
+                except TimeoutError:
+                    response = None
+
+                # give the device time to recover
+                time.sleep(0.5)
 
         return response
 
@@ -182,18 +189,20 @@ class PyfohhnFdcpSerial(PyfohhnFdcp):
         """
         response = bytearray()
 
-        with serial.Serial(self.com_port, self.baud_rate, timeout=timeout) as ser:
-            ser.write(escaped_command)
+        with self._mutex:
 
-            while True:
-                data = ser.read(1)
+            with serial.Serial(self.com_port, self.baud_rate, timeout=timeout) as ser:
+                ser.write(escaped_command)
 
-                if data:
-                    response.append(data[0])
+                while True:
+                    data = ser.read(1)
 
-                    if response[-1] == self.START_BYTE:
-                        break
-                else:
-                    return None
+                    if data:
+                        response.append(data[0])
+
+                        if response[-1] == self.START_BYTE:
+                            break
+                    else:
+                        return None
 
         return response
