@@ -63,15 +63,23 @@ class PyFohhnDevice:
 
         # scan for devices - use first found device ID
         if self.id is None:
-            for i in range(1, self.MAX_ID):
-                response = self.communicator.send_command(
-                    i, PyFohhnCommands.GET_INFO, 0x00, 0x00, b"\x01", retries=0
+
+            # try broadcast ID first (not supported by all firmwares)
+            response, found_id = self.communicator.send_command_get_id(
+                    0, PyFohhnCommands.GET_INFO, 0x00, 0x00, b"\x01", retries=0
                 )
-                if response:
-                    self.id = i
-                    break
+            if response:
+                self.id = found_id
             else:
-                raise ValueError("No device found - please check connection")
+                for i in range(1, self.MAX_ID):
+                    response = self.communicator.send_command(
+                        i, PyFohhnCommands.GET_INFO, 0x00, 0x00, b"\x01", retries=0
+                    )
+                    if response:
+                        self.id = i
+                        break
+                else:
+                    raise ValueError("No device found - please check connection")
 
     def probe(self):
         """

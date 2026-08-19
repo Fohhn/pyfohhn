@@ -86,21 +86,32 @@ class PyfohhnFdcp:
         """
         raise NotImplementedError()
 
-    def send_command(self, id, command, msb, lsb, data, retries=2, timeout=0.1):
+    def send_command_get_id(self, id, command, msb, lsb, data, retries=2, timeout=0.1):
         """
         Escape and send a binary FDCP command and wait for the response.
+        Return received data as well as the FDCP ID
         """
+        received_data = None
         escaped_command = self._prepare_command(id, command, msb, lsb, data)
 
         for i in range(retries + 1):
             response = self._send_command(escaped_command, timeout)
             if response:
-                return self._unescape_data(response[:-2])
+                unescaped_data = self._unescape_data(response[:-1])
+                return unescaped_data[:-1], unescaped_data[-1]
 
             # give the device time to recover
             time.sleep(0.5)
 
         return None
+
+    def send_command(self, id, command, msb, lsb, data, retries=2, timeout=0.1):
+        """
+        Escape and send a binary FDCP command and wait for the response.
+        """
+        data, _dummy = self.send_command_get_id(id, command, msb, lsb, data, retries, timeout)
+
+        return data
 
 
 class PyfohhnFdcpUdp(PyfohhnFdcp):
