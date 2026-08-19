@@ -81,6 +81,16 @@ class PyFohhnDevice:
                 else:
                     raise ValueError("No device found - please check connection")
 
+        # lookup actual device ID - can differ when using broadcast ID for scanning
+        else:
+            response, found_id = self.communicator.send_command_get_id(
+                    self.id, PyFohhnCommands.GET_INFO, 0x00, 0x00, b"\x01", retries=0
+                )
+            if response:
+                self.id = found_id
+            else:
+                raise ValueError("No device found - please check connection")
+
     def probe(self):
         """
         Check if the device is accessible - returns True if device is accessible
