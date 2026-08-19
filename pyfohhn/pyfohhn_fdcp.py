@@ -103,7 +103,7 @@ class PyfohhnFdcp:
             # give the device time to recover
             time.sleep(0.5)
 
-        return None
+        return None, None
 
     def send_command(self, id, command, msb, lsb, data, retries=2, timeout=0.1):
         """
