@@ -98,7 +98,8 @@ class PyfohhnFdcp:
             response = self._send_command(escaped_command, timeout)
             if response:
                 unescaped_data = self._unescape_data(response[:-1])
-                return unescaped_data[:-1], unescaped_data[-1]
+                if unescaped_data is not None:
+                    return unescaped_data[:-1], unescaped_data[-1]
 
             # give the device time to recover
             time.sleep(0.5)
@@ -109,7 +110,9 @@ class PyfohhnFdcp:
         """
         Escape and send a binary FDCP command and wait for the response.
         """
-        data, _dummy = self.send_command_get_id(id, command, msb, lsb, data, retries, timeout)
+        data, _dummy = self.send_command_get_id(
+            id, command, msb, lsb, data, retries, timeout
+        )
 
         return data
 
