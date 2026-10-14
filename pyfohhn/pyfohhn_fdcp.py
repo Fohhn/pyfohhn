@@ -101,8 +101,9 @@ class PyfohhnFdcp:
                 if unescaped_data is not None:
                     return unescaped_data[:-1], unescaped_data[-1]
 
-            # give the device time to recover
-            time.sleep(0.5)
+            # give the device time to recover before retrying
+            if retries:
+                time.sleep(0.5)
 
         return None, None
 
@@ -181,8 +182,9 @@ class PyfohhnFdcpUdp(PyfohhnFdcp):
                 except TimeoutError:
                     response = None
 
-                # give the device time to recover
-                time.sleep(0.5)
+                # give the device time to recover before retrying
+                if retries:
+                    time.sleep(0.5)
 
         return response
 
